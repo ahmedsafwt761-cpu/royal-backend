@@ -1,9 +1,9 @@
 from django.urls import path
-from . import views
+from .views import health, product_list, create_quote, admin_quotes
 
 urlpatterns = [
-    path("health/", views.health),
-    path("products/", views.product_list),
-    path("quotes/", views.create_quote),
-    path("admin/quotes/", views.admin_quotes),
+    path("health/", health),
+    path("products/", product_list),
+    path("quotes/", create_quote),
+    path("admin/quotes/", admin_quotes),
 ]

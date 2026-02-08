@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Product, QuoteRequest
-from .serializers import ProductSerializer, QuoteRequestSerializer, QuoteListSerializer
+from .serializers import ProductSerializer, QuoteRequestCreateSerializer, QuoteListSerializer
 
 
 @api_view(["GET"])
@@ -23,18 +23,15 @@ def product_list(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def create_quote(request):
-    """
-    يستقبل طلب عرض سعر من الفرونت:
-    {
-      product_slug, name, phone, email?, company?, message?
-    }
-    """
-    serializer = QuoteRequestSerializer(data=request.data)
+    serializer = QuoteRequestCreateSerializer(data=request.data)
     if serializer.is_valid():
         obj = serializer.save()
         return Response({"ok": True, "id": obj.id}, status=status.HTTP_201_CREATED)
 
-    return Response({"ok": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(
+        {"ok": False, "detail": "بيانات غير صحيحة", "errors": serializer.errors},
+        status=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @api_view(["GET"])
@@ -42,4 +39,3 @@ def create_quote(request):
 def admin_quotes(request):
     qs = QuoteRequest.objects.select_related("product").order_by("-created_at")[:300]
     return Response({"ok": True, "items": QuoteListSerializer(qs, many=True).data})
-

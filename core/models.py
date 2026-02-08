@@ -11,7 +11,6 @@ class Product(models.Model):
         return self.name
 
 
-# 👇👇 لازم يكون فوق QuoteRequest
 STATUS_CHOICES = [
     ("new", "جديد"),
     ("contacted", "تم التواصل"),
@@ -27,12 +26,7 @@ class QuoteRequest(models.Model):
     company = models.CharField(max_length=160, blank=True)
     message = models.TextField(blank=True)
 
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="new",
-    )
-
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
