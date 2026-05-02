@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: royal-backend
+    runtime: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn royal.wsgi:application"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: royal.settings
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
