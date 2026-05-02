@@ -1,17 +1,12 @@
 from django.contrib import admin
-from .models import Product, QuoteRequest
+from .models import Quote
 
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug")
-    search_fields = ("name", "slug")
-    prepopulated_fields = {"slug": ("name",)}
-
-
-@admin.register(QuoteRequest)
-class QuoteRequestAdmin(admin.ModelAdmin):
-    list_display = ("name", "phone", "product", "status", "created_at")
-    list_filter = ("status", "created_at", "product")
-    search_fields = ("name", "phone", "email", "company", "message", "product__name", "product__slug")
-    ordering = ("-created_at",)
+@admin.register(Quote)
+class QuoteAdmin(admin.ModelAdmin):
+    list_display = ['name', 'phone', 'product_slug', 'status', 'created_at']
+    list_filter = ['status', 'product_slug', 'created_at']
+    search_fields = ['name', 'phone', 'email', 'message']
+    readonly_fields = ['created_at', 'updated_at']
+    list_editable = ['status']
+    date_hierarchy = 'created_at'

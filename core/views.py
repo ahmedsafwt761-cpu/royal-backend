@@ -1,41 +1,49 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAdminUser
-from rest_framework.response import Response
-from rest_framework import status
-
-from .models import Product, QuoteRequest
-from .serializers import ProductSerializer, QuoteRequestCreateSerializer, QuoteListSerializer
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def health(request):
-    return Response({"ok": True, "service": "Royal Steel API"})
+from rest_framework import generics
+from rest_framework.throttling import AnonRateThrottle
+from django.core.mail import send_mail
+from django.conf import settings
+from .models import Quote
+from .serializers import QuoteSerializer
 
 
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def product_list(request):
-    qs = Product.objects.all().order_by("name")
-    return Response(ProductSerializer(qs, many=True).data)
+class QuoteRateThrottle(AnonRateThrottle):
+    rate = '10/hour'
 
 
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def create_quote(request):
-    serializer = QuoteRequestCreateSerializer(data=request.data)
-    if serializer.is_valid():
-        obj = serializer.save()
-        return Response({"ok": True, "id": obj.id}, status=status.HTTP_201_CREATED)
+class QuoteCreateView(generics.CreateAPIView):
+    queryset = Quote.objects.all()
+    serializer_class = QuoteSerializer
+    throttle_classes = [QuoteRateThrottle]
 
-    return Response(
-        {"ok": False, "detail": "بيانات غير صحيحة", "errors": serializer.errors},
-        status=status.HTTP_400_BAD_REQUEST,
-    )
+    def perform_create(self, serializer):
+        quote = serializer.save()
+
+        # Send email notification in production
+        if not settings.DEBUG:
+            try:
+                send_mail(
+                    subject=f'طلب عرض سعر جديد - {quote.name}',
+                    message=f'''
+                    اسم: {quote.name}
+                    تليفون: {quote.phone}
+                    منتج: {quote.get_product_slug_display()}
+                    رسالة: {quote.message}
+                    ''',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=['royalsteelegypt@gmail.com'],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
+
+        return quote
 
 
-@api_view(["GET"])
-@permission_classes([IsAdminUser])
-def admin_quotes(request):
-    qs = QuoteRequest.objects.select_related("product").order_by("-created_at")[:300]
-    return Response({"ok": True, "items": QuoteListSerializer(qs, many=True).data})
+class QuoteListView(generics.ListAPIView):
+    queryset = Quote.objects.all()
+    serializer_class = QuoteSerializer
+
+
+class QuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Quote.objects.all()
+    serializer_class = QuoteSerializer
